@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Calendar,
   CheckCircle,
@@ -9,8 +10,10 @@ import {
   TrendingUp,
   AlertCircle,
   Star,
+  Loader2,
 } from 'lucide-react'
 import ReliabilityBadge from '@/components/ReliabilityBadge'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Booking {
   id: number
@@ -37,22 +40,33 @@ interface Stats {
 }
 
 export default function Dashboard() {
-  // Per demo, usa professional_id=1. In produzione, ottieni da auth
-  const DEMO_PROFESSIONAL_ID = 1
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
 
   const [bookings, setBookings] = useState<Booking[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'all'>('pending')
 
+  // Redirect se non autenticato o non professionista
   useEffect(() => {
-    fetchBookings()
-    fetchStats()
-  }, [])
+    if (!authLoading && (!user || user.role !== 'professional')) {
+      router.push('/')
+    }
+  }, [user, authLoading, router])
+
+  useEffect(() => {
+    if (user?.professional_id) {
+      fetchBookings()
+      fetchStats()
+    }
+  }, [user])
 
   const fetchBookings = async () => {
+    if (!user?.professional_id) return
+
     try {
-      const response = await fetch(`/api/bookings?professional_id=${DEMO_PROFESSIONAL_ID}`)
+      const response = await fetch(`/api/bookings?professional_id=${user.professional_id}`)
       const data = await response.json()
       setBookings(data)
     } catch (error) {
@@ -63,8 +77,10 @@ export default function Dashboard() {
   }
 
   const fetchStats = async () => {
+    if (!user?.professional_id) return
+
     try {
-      const response = await fetch(`/api/professionals/${DEMO_PROFESSIONAL_ID}/stats`)
+      const response = await fetch(`/api/professionals/${user.professional_id}/stats`)
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -141,12 +157,21 @@ export default function Dashboard() {
     )
   }
 
-  if (loading) {
+  // Loading states
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-500">Caricamento...</div>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+          <div className="text-gray-500">Caricamento...</div>
+        </div>
       </div>
     )
+  }
+
+  // Non autenticato (redirect in corso)
+  if (!user || user.role !== 'professional') {
+    return null
   }
 
   return (

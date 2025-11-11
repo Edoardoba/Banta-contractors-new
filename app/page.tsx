@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { MapPin, Search, Heart, Star, Filter, X, PanelLeftClose, PanelLeft } from 'lucide-react'
+import { MapPin, Search, Heart, Star, Filter, X, PanelLeftClose, PanelLeft, User, LogOut } from 'lucide-react'
 import type { Professional } from '@/lib/professionals'
 import type { Service } from '@/lib/services'
 import ServicesPopup from '@/components/ServicesPopup'
 import ReliabilityBadge from '@/components/ReliabilityBadge'
 import BookingModal from '@/components/BookingModal'
+import AuthModal from '@/components/AuthModal'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Dynamically import map to avoid SSR issues
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
@@ -28,6 +30,8 @@ export default function Home() {
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [selectedService, setSelectedService] = useState<Service | undefined>(undefined)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const { user, logout } = useAuth()
 
   useEffect(() => {
     fetchProfessionals()
@@ -226,7 +230,7 @@ export default function Home() {
                 <span>Roma, Italia</span>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -260,6 +264,31 @@ export default function Home() {
                   </button>
                 )}
               </div>
+
+              {/* Auth button */}
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-teal-50 rounded-lg">
+                    <User className="w-4 h-4 text-teal-600" />
+                    <span className="text-sm font-medium text-teal-700">{user.name}</span>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Logout"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="text-sm font-medium">Accedi</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -416,6 +445,15 @@ export default function Home() {
           service={selectedService}
         />
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          // Ricarica dati se necessario
+        }}
+      />
     </div>
   )
 }
