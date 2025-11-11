@@ -385,9 +385,9 @@ export default function ProfessionalOnboarding() {
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-purple-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 animate-fadeInUp">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
+            <div className="p-3 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl animate-float shadow-lg">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
@@ -420,7 +420,7 @@ export default function ProfessionalOnboarding() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="gradient-border shadow-2xl p-8 animate-scaleIn">
           {/* Step 1: Dati Personali */}
           {currentStep === 1 && (
             <div className="space-y-6 animate-slideIn">
@@ -819,7 +819,7 @@ export default function ProfessionalOnboarding() {
               <button
                 onClick={prevStep}
                 disabled={loading}
-                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2"
+                className="btn-ripple flex-1 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all font-medium flex items-center justify-center gap-2"
               >
                 <ChevronLeft className="w-5 h-5" />
                 Indietro
@@ -829,7 +829,7 @@ export default function ProfessionalOnboarding() {
             <button
               onClick={nextStep}
               disabled={loading}
-              className="flex-1 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-xl hover:shadow-lg transition-all font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+              className="btn-ripple flex-1 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-xl hover:shadow-2xl hover:scale-105 transition-all font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:hover:scale-100"
             >
               {loading ? (
                 <>
@@ -853,34 +853,8 @@ export default function ProfessionalOnboarding() {
       </div>
 
       <style jsx>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateX(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
         .animate-slideIn {
-          animation: slideIn 0.3s ease-out;
-        }
-
-        .animate-scaleIn {
-          animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
       `}</style>
     </div>

@@ -9,6 +9,7 @@ import ServicesPopup from '@/components/ServicesPopup'
 import ReliabilityBadge from '@/components/ReliabilityBadge'
 import BookingModal from '@/components/BookingModal'
 import AuthModal from '@/components/AuthModal'
+import ProfessionalCardSkeleton from '@/components/ProfessionalCardSkeleton'
 import { useAuth } from '@/contexts/AuthContext'
 
 // Dynamically import map to avoid SSR issues
@@ -27,6 +28,7 @@ export default function Home() {
   const [servicesForPopup, setServicesForPopup] = useState<Service[]>([])
   const [professionalForServices, setProfessionalForServices] = useState<Professional | null>(null)
   const [loadingServices, setLoadingServices] = useState(false)
+  const [loadingProfessionals, setLoadingProfessionals] = useState(true)
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null)
   const [showBookingModal, setShowBookingModal] = useState(false)
   const [selectedService, setSelectedService] = useState<Service | undefined>(undefined)
@@ -43,12 +45,15 @@ export default function Home() {
 
   const fetchProfessionals = async () => {
     try {
+      setLoadingProfessionals(true)
       const response = await fetch('/api/professionals')
       const data = await response.json()
       setProfessionals(data)
       setFilteredProfessionals(data)
     } catch (error) {
       console.error('Errore nel recupero dei professionisti:', error)
+    } finally {
+      setLoadingProfessionals(false)
     }
   }
 
@@ -127,7 +132,7 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-purple-50">
       {/* Left Sidebar - Filters */}
-      <div className={`${showFilters ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden bg-white/90 backdrop-blur-sm border-r border-gray-200 shadow-lg`}>
+      <div className={`${showFilters ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden glass-effect border-r border-gray-200 shadow-lg`}>
         <div className="p-6 h-full overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
@@ -201,14 +206,14 @@ export default function Home() {
       {/* Center Column - Listings */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4 shadow-sm">
+        <div className="glass-effect border-b border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                  showFilters 
-                    ? 'bg-teal-100 text-teal-700 hover:bg-teal-200' 
+                className={`btn-ripple flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                  showFilters
+                    ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
                 aria-label={showFilters ? 'Nascondi sidebar' : 'Mostra sidebar'}
@@ -283,7 +288,7 @@ export default function Home() {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all"
+                  className="btn-ripple flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all"
                 >
                   <User className="w-4 h-4" />
                   <span className="text-sm font-medium">Accedi</span>
@@ -295,20 +300,34 @@ export default function Home() {
 
         {/* Listings */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="mb-4 text-sm text-gray-600">
-            {filteredProfessionals.length} {filteredProfessionals.length === 1 ? 'professionista trovato' : 'professionisti trovati'}
-          </div>
+          {!loadingProfessionals && (
+            <div className="mb-4 text-sm text-gray-600 animate-fadeInUp">
+              {filteredProfessionals.length} {filteredProfessionals.length === 1 ? 'professionista trovato' : 'professionisti trovati'}
+            </div>
+          )}
           <div className="space-y-4">
-            {filteredProfessionals.map((professional) => (
-              <div
-                key={professional.id}
-                onClick={() => setSelectedProfessional(professional)}
-                className={`bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-200 cursor-pointer overflow-hidden border-2 ${
-                  selectedProfessional?.id === professional.id
-                    ? 'border-teal-500'
-                    : 'border-transparent hover:border-teal-200'
-                }`}
-              >
+            {loadingProfessionals ? (
+              // Skeleton loading
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="opacity-0 animate-fadeInUp" style={{ animationDelay: `${i * 100}ms` }}>
+                    <ProfessionalCardSkeleton />
+                  </div>
+                ))}
+              </>
+            ) : (
+              // Actual cards with stagger animation
+              filteredProfessionals.map((professional, index) => (
+                <div
+                  key={professional.id}
+                  onClick={() => setSelectedProfessional(professional)}
+                  className={`opacity-0 animate-fadeInUp card-hover bg-white rounded-xl cursor-pointer overflow-hidden border-2 ${
+                    selectedProfessional?.id === professional.id
+                      ? 'border-teal-500 shadow-lg'
+                      : 'border-transparent'
+                  }`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
                 <div className="flex">
                   <div className="w-64 h-48 bg-gradient-to-br from-teal-400 to-purple-500 flex-shrink-0 relative overflow-hidden">
                     {professional.image_url ? (
@@ -378,7 +397,7 @@ export default function Home() {
                         </div>
                         <button
                           onClick={(e) => handleShowServices(e, professional)}
-                          className="mt-3 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-shadow text-sm font-medium"
+                          className="btn-ripple mt-3 px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all text-sm font-medium"
                         >
                           Mostra Servizi
                         </button>
@@ -404,9 +423,10 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            ))}
-            {filteredProfessionals.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
+            ))
+            )}
+            {!loadingProfessionals && filteredProfessionals.length === 0 && (
+              <div className="text-center py-12 text-gray-500 animate-fadeInUp">
                 Nessun professionista trovato. Prova ad aggiustare i filtri.
               </div>
             )}

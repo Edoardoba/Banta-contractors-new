@@ -90,9 +90,9 @@ export default function AuthModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn">
+      <div className="relative gradient-border shadow-2xl w-full max-w-md overflow-hidden animate-scaleIn">
         {/* Decorative top gradient */}
-        <div className="h-1.5 bg-gradient-to-r from-teal-500 via-cyan-500 to-purple-500" />
+        <div className="h-1.5 bg-gradient-to-r from-teal-500 via-cyan-500 to-purple-500 opacity-0" />
 
         {/* Close button */}
         <button
@@ -236,7 +236,7 @@ export default function AuthModal({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn-ripple w-full py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
