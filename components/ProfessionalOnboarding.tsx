@@ -82,6 +82,8 @@ export default function ProfessionalOnboarding() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   const [data, setData] = useState<OnboardingData>({
     name: '',
@@ -106,6 +108,59 @@ export default function ProfessionalOnboarding() {
 
   const updateData = (field: keyof OnboardingData, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validazione client-side
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setError('Tipo file non supportato. Usa JPG, PNG o WebP')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File troppo grande. Massimo 5MB')
+      return
+    }
+
+    try {
+      setUploadingImage(true)
+      setError('')
+
+      // Preview locale
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+
+      // Upload al server
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('/api/upload/professional-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Errore durante upload')
+      }
+
+      const result = await response.json()
+      updateData('image_url', result.url)
+
+    } catch (err: any) {
+      console.error('Upload error:', err)
+      setError(err.message || 'Errore durante upload immagine')
+      setImagePreview(null)
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   const addService = () => {
@@ -136,15 +191,15 @@ export default function ProfessionalOnboarding() {
 
   const toggleAvailability = (dayOfWeek: number) => {
     setData((prev) => {
-      const exists = prev.availability.find((a) => a.day_of_week === dayOfWeek)
-      if (exists) {
-        // Rimuovi
+      const slotsForDay = prev.availability.filter((a) => a.day_of_week === dayOfWeek)
+      if (slotsForDay.length > 0) {
+        // Rimuovi tutti gli slot per questo giorno
         return {
           ...prev,
           availability: prev.availability.filter((a) => a.day_of_week !== dayOfWeek),
         }
       } else {
-        // Aggiungi
+        // Aggiungi uno slot default per questo giorno
         return {
           ...prev,
           availability: [
@@ -156,17 +211,69 @@ export default function ProfessionalOnboarding() {
     })
   }
 
-  const updateAvailability = (
+  const addTimeSlot = (dayOfWeek: number) => {
+    setData((prev) => ({
+      ...prev,
+      availability: [
+        ...prev.availability,
+        { day_of_week: dayOfWeek, start_time: '09:00', end_time: '18:00' },
+      ],
+    }))
+  }
+
+  const removeTimeSlot = (dayOfWeek: number, slotIndex: number) => {
+    setData((prev) => {
+      const slotsForDay = prev.availability.filter((a) => a.day_of_week === dayOfWeek)
+      // Se è l'ultimo slot, disabilita il giorno completamente
+      if (slotsForDay.length === 1) {
+        return {
+          ...prev,
+          availability: prev.availability.filter((a) => a.day_of_week !== dayOfWeek),
+        }
+      }
+      // Altrimenti rimuovi solo lo slot specifico
+      const allSlots = prev.availability.filter((a) => a.day_of_week === dayOfWeek)
+      const slotToRemove = allSlots[slotIndex]
+      let removed = false
+      return {
+        ...prev,
+        availability: prev.availability.filter((a) => {
+          if (a.day_of_week === dayOfWeek && !removed &&
+              a.start_time === slotToRemove.start_time &&
+              a.end_time === slotToRemove.end_time) {
+            removed = true
+            return false
+          }
+          return true
+        }),
+      }
+    })
+  }
+
+  const updateTimeSlot = (
     dayOfWeek: number,
+    slotIndex: number,
     field: 'start_time' | 'end_time',
     value: string
   ) => {
-    setData((prev) => ({
-      ...prev,
-      availability: prev.availability.map((a) =>
-        a.day_of_week === dayOfWeek ? { ...a, [field]: value } : a
-      ),
-    }))
+    setData((prev) => {
+      const slotsForDay = prev.availability.filter((a) => a.day_of_week === dayOfWeek)
+      const slotToUpdate = slotsForDay[slotIndex]
+
+      let updated = false
+      return {
+        ...prev,
+        availability: prev.availability.map((a) => {
+          if (a.day_of_week === dayOfWeek && !updated &&
+              a.start_time === slotToUpdate.start_time &&
+              a.end_time === slotToUpdate.end_time) {
+            updated = true
+            return { ...a, [field]: value }
+          }
+          return a
+        }),
+      }
+    })
   }
 
   const validateStep = (step: number): boolean => {
@@ -440,15 +547,38 @@ export default function ProfessionalOnboarding() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL Foto Profilo (opzionale)
+                  Foto Profilo (opzionale)
                 </label>
-                <input
-                  type="url"
-                  value={data.image_url}
-                  onChange={(e) => updateData('image_url', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                  placeholder="https://example.com/photo.jpg"
-                />
+
+                {/* Preview immagine */}
+                {imagePreview && (
+                  <div className="mb-4">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-32 h-32 object-cover rounded-xl border-2 border-teal-500"
+                    />
+                  </div>
+                )}
+
+                {/* Input file */}
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 disabled:opacity-50"
+                  />
+                  {uploadingImage && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  JPG, PNG o WebP - Massimo 5MB
+                </p>
               </div>
             </div>
           )}
@@ -573,10 +703,10 @@ export default function ProfessionalOnboarding() {
 
               <div className="space-y-4">
                 {DAYS_OF_WEEK.map((day) => {
-                  const avail = data.availability.find(
+                  const slotsForDay = data.availability.filter(
                     (a) => a.day_of_week === day.value
                   )
-                  const isActive = !!avail
+                  const isActive = slotsForDay.length > 0
 
                   return (
                     <div
@@ -587,50 +717,91 @@ export default function ProfessionalOnboarding() {
                           : 'border-gray-200'
                       }`}
                     >
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="checkbox"
-                          checked={isActive}
-                          onChange={() => toggleAvailability(day.value)}
-                          className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500"
-                        />
-                        <span className="font-medium text-gray-900 w-24">
-                          {day.label}
-                        </span>
-
-                        {isActive && (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="time"
-                              value={avail.start_time}
-                              onChange={(e) =>
-                                updateAvailability(
-                                  day.value,
-                                  'start_time',
-                                  e.target.value
-                                )
-                              }
-                              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            />
-                            <span className="text-gray-500">-</span>
-                            <input
-                              type="time"
-                              value={avail.end_time}
-                              onChange={(e) =>
-                                updateAvailability(
-                                  day.value,
-                                  'end_time',
-                                  e.target.value
-                                )
-                              }
-                              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                            />
-                          </div>
+                      {/* Header giorno */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={isActive}
+                            onChange={() => toggleAvailability(day.value)}
+                            className="w-5 h-5 text-teal-600 rounded focus:ring-teal-500"
+                          />
+                          <span className="font-medium text-gray-900">
+                            {day.label}
+                          </span>
+                        </div>
+                        {isActive && slotsForDay.length > 0 && (
+                          <span className="text-xs text-teal-600 font-medium">
+                            {slotsForDay.length} {slotsForDay.length === 1 ? 'intervallo' : 'intervalli'}
+                          </span>
                         )}
                       </div>
+
+                      {/* Slot orari */}
+                      {isActive && (
+                        <div className="ml-8 space-y-3">
+                          {slotsForDay.map((slot, slotIndex) => (
+                            <div
+                              key={slotIndex}
+                              className="flex items-center gap-2"
+                            >
+                              <input
+                                type="time"
+                                value={slot.start_time}
+                                onChange={(e) =>
+                                  updateTimeSlot(
+                                    day.value,
+                                    slotIndex,
+                                    'start_time',
+                                    e.target.value
+                                  )
+                                }
+                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                              />
+                              <span className="text-gray-500">-</span>
+                              <input
+                                type="time"
+                                value={slot.end_time}
+                                onChange={(e) =>
+                                  updateTimeSlot(
+                                    day.value,
+                                    slotIndex,
+                                    'end_time',
+                                    e.target.value
+                                  )
+                                }
+                                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                              />
+                              {slotsForDay.length > 1 && (
+                                <button
+                                  onClick={() => removeTimeSlot(day.value, slotIndex)}
+                                  className="text-red-600 hover:text-red-700 text-sm font-medium px-3"
+                                >
+                                  Rimuovi
+                                </button>
+                              )}
+                            </div>
+                          ))}
+
+                          {/* Bottone aggiungi slot */}
+                          <button
+                            onClick={() => addTimeSlot(day.value)}
+                            className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center gap-1"
+                          >
+                            <span className="text-lg">+</span> Aggiungi intervallo
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Suggerimento:</strong> Puoi aggiungere più intervalli per lo stesso giorno.
+                  Ad esempio: Lunedì 9:00-12:00 e 16:00-18:00
+                </p>
               </div>
             </div>
           )}
