@@ -7,6 +7,7 @@ import type { Professional } from '@/lib/professionals'
 import type { Service } from '@/lib/services'
 import ServicesPopup from '@/components/ServicesPopup'
 import ReliabilityBadge from '@/components/ReliabilityBadge'
+import BookingModal from '@/components/BookingModal'
 
 // Dynamically import map to avoid SSR issues
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
@@ -25,6 +26,8 @@ export default function Home() {
   const [professionalForServices, setProfessionalForServices] = useState<Professional | null>(null)
   const [loadingServices, setLoadingServices] = useState(false)
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null)
+  const [showBookingModal, setShowBookingModal] = useState(false)
+  const [selectedService, setSelectedService] = useState<Service | undefined>(undefined)
 
   useEffect(() => {
     fetchProfessionals()
@@ -104,6 +107,17 @@ export default function Home() {
     setShowServicesPopup(false)
     setServicesForPopup([])
     setProfessionalForServices(null)
+  }
+
+  const handleBookService = (service: Service) => {
+    setSelectedService(service)
+    setShowServicesPopup(false)
+    setShowBookingModal(true)
+  }
+
+  const handleCloseBookingModal = () => {
+    setShowBookingModal(false)
+    setSelectedService(undefined)
   }
 
   return (
@@ -389,6 +403,17 @@ export default function Home() {
           isOpen={showServicesPopup}
           onClose={handleCloseServicesPopup}
           isLoading={loadingServices}
+          onBookService={handleBookService}
+        />
+      )}
+
+      {/* Booking Modal */}
+      {professionalForServices && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={handleCloseBookingModal}
+          professional={professionalForServices}
+          service={selectedService}
         />
       )}
     </div>

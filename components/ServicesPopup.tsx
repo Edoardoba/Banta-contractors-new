@@ -1,6 +1,6 @@
 'use client'
 
-import { X, Clock, Euro } from 'lucide-react'
+import { X, Clock, Euro, Calendar } from 'lucide-react'
 import type { Service } from '@/lib/services'
 
 interface ServicesPopupProps {
@@ -9,6 +9,7 @@ interface ServicesPopupProps {
   isOpen: boolean
   onClose: () => void
   isLoading?: boolean
+  onBookService?: (service: Service) => void
 }
 
 export default function ServicesPopup({
@@ -17,6 +18,7 @@ export default function ServicesPopup({
   isOpen,
   onClose,
   isLoading = false,
+  onBookService,
 }: ServicesPopupProps) {
   if (!isOpen) return null
 
@@ -70,12 +72,23 @@ export default function ServicesPopup({
                   {service.description && (
                     <p className="text-gray-600 text-sm mb-3">{service.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-sm text-gray-500">
-                    {service.duration_minutes && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{service.duration_minutes} minuti</span>
-                      </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="text-sm text-gray-500">
+                      {service.duration_minutes && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          <span>{service.duration_minutes} minuti</span>
+                        </div>
+                      )}
+                    </div>
+                    {onBookService && (
+                      <button
+                        onClick={() => onBookService(service)}
+                        className="px-4 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium flex items-center gap-2"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        Prenota
+                      </button>
                     )}
                   </div>
                 </div>
