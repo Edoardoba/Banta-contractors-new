@@ -48,9 +48,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'all'>('pending')
 
-  // Redirect se non autenticato o non professionista
+  // Redirect se non autenticato o non ha ruolo professional
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== 'professional')) {
+    if (!authLoading && (!user || !user.roles?.includes('professional'))) {
       router.push('/')
     }
   }, [user, authLoading, router])

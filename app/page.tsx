@@ -10,6 +10,7 @@ import ReliabilityBadge from '@/components/ReliabilityBadge'
 import BookingModal from '@/components/BookingModal'
 import AuthModal from '@/components/AuthModal'
 import ProfessionalCardSkeleton from '@/components/ProfessionalCardSkeleton'
+import RoleSwitcher from '@/components/RoleSwitcher'
 import { useAuth } from '@/contexts/AuthContext'
 
 // Dynamically import map to avoid SSR issues
@@ -192,6 +193,9 @@ export default function Home() {
                   </button>
                 )}
               </div>
+
+              {/* Role Switcher for dual role users */}
+              <RoleSwitcher />
 
               {/* Auth button */}
               {user ? (
