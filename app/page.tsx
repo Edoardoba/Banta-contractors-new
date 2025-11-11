@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { MapPin, Search, Heart, Star, Filter, X, PanelLeftClose, PanelLeft, User, LogOut } from 'lucide-react'
+import { MapPin, Search, Heart, Star, X, User, LogOut } from 'lucide-react'
 import type { Professional } from '@/lib/professionals'
 import type { Service } from '@/lib/services'
 import ServicesPopup from '@/components/ServicesPopup'
@@ -23,7 +23,6 @@ export default function Home() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
-  const [showFilters, setShowFilters] = useState(true)
   const [showServicesPopup, setShowServicesPopup] = useState(false)
   const [servicesForPopup, setServicesForPopup] = useState<Service[]>([])
   const [professionalForServices, setProfessionalForServices] = useState<Professional | null>(null)
@@ -129,104 +128,21 @@ export default function Home() {
     setSelectedService(undefined)
   }
 
+  // Calculate stats
+  const totalProfessionals = professionals.length
+  const avgRating = professionals.length > 0
+    ? professionals.reduce((sum, p) => sum + (Number(p.rating) || 0), 0) / professionals.length
+    : 0
+  const totalReviews = professionals.reduce((sum, p) => sum + (p.review_count || 0), 0)
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-purple-50">
-      {/* Left Sidebar - Filters */}
-      <div className={`${showFilters ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden glass-effect border-r border-gray-200 shadow-lg`}>
-        <div className="p-6 h-full overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-purple-600 bg-clip-text text-transparent">
-              Filtri
-            </h2>
-          </div>
-
-          {/* Category Filter */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Categoria</h3>
-            <div className="space-y-2">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                  selectedCategory === null
-                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
-              >
-                Tutte le Categorie
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                    selectedCategory === category
-                      ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Price Range Filter */}
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Fascia di Prezzo</h3>
-            <div className="space-y-2">
-              {['€0-30/ora', '€30-60/ora', '€60-100/ora', '€100+/ora'].map((range) => (
-                <button
-                  key={range}
-                  className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors"
-                >
-                  {range}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Rating Filter */}
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Valutazione Minima</h3>
-            <div className="space-y-2">
-              {[4.5, 4.0, 3.5, 3.0].map((rating) => (
-                <button
-                  key={rating}
-                  className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 transition-colors flex items-center gap-2"
-                >
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  {rating}+ Stelle
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Center Column - Listings */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="glass-effect border-b border-gray-200 p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`btn-ripple flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                  showFilters
-                    ? 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-                aria-label={showFilters ? 'Nascondi sidebar' : 'Mostra sidebar'}
-              >
-                {showFilters ? (
-                  <PanelLeftClose className="w-5 h-5" />
-                ) : (
-                  <PanelLeft className="w-5 h-5" />
-                )}
-                <span className="text-sm font-medium hidden sm:inline">
-                  {showFilters ? 'Nascondi' : 'Filtri'}
-                </span>
-              </button>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-600 via-cyan-600 to-purple-600 bg-clip-text text-transparent">
                 Banta
               </h1>
@@ -234,6 +150,13 @@ export default function Home() {
                 <MapPin className="w-4 h-4" />
                 <span>Roma, Italia</span>
               </div>
+              <a
+                href="/professional-signup"
+                className="hidden lg:flex btn-ripple items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all text-sm font-medium"
+              >
+                <Star className="w-4 h-4" />
+                Diventa Professionista
+              </a>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative">
@@ -296,7 +219,77 @@ export default function Home() {
               )}
             </div>
           </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`btn-ripple flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                selectedCategory === null
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg scale-105'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+              }`}
+            >
+              Tutte
+            </button>
+            {categories.map((category, index) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`btn-ripple flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all opacity-0 animate-fadeInUp ${
+                  selectedCategory === category
+                    ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                }`}
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Stats Cards */}
+        {!loadingProfessionals && (
+          <div className="px-6 pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="glass-effect rounded-xl p-4 opacity-0 animate-fadeInUp border border-white/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Professionisti</p>
+                  <p className="text-3xl font-bold text-gray-900">{totalProfessionals}</p>
+                </div>
+                <div className="p-3 bg-teal-100 rounded-lg">
+                  <User className="w-6 h-6 text-teal-600" />
+                </div>
+              </div>
+            </div>
+            <div className="glass-effect rounded-xl p-4 opacity-0 animate-fadeInUp delay-100 border border-white/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Rating Medio</p>
+                  <p className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                    {avgRating.toFixed(1)}
+                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  </p>
+                </div>
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <Star className="w-6 h-6 text-yellow-600" />
+                </div>
+              </div>
+            </div>
+            <div className="glass-effect rounded-xl p-4 opacity-0 animate-fadeInUp delay-200 border border-white/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Recensioni Totali</p>
+                  <p className="text-3xl font-bold text-gray-900">{totalReviews}</p>
+                </div>
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <Heart className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Listings */}
         <div className="flex-1 overflow-y-auto p-6">
@@ -426,8 +419,32 @@ export default function Home() {
             ))
             )}
             {!loadingProfessionals && filteredProfessionals.length === 0 && (
-              <div className="text-center py-12 text-gray-500 animate-fadeInUp">
-                Nessun professionista trovato. Prova ad aggiustare i filtri.
+              <div className="flex flex-col items-center justify-center py-16 px-4 animate-fadeInUp">
+                <div className="glass-effect rounded-2xl p-12 max-w-md text-center border border-white/50">
+                  <div className="w-24 h-24 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-float">
+                    <Search className="w-12 h-12 text-teal-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    Nessun risultato trovato
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    {searchTerm
+                      ? `Nessun professionista trovato per "${searchTerm}"`
+                      : selectedCategory
+                      ? `Nessun professionista nella categoria "${selectedCategory}"`
+                      : 'Prova a modificare i filtri di ricerca'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchTerm('')
+                      setSelectedCategory(null)
+                      setMapBounds(null)
+                    }}
+                    className="btn-ripple px-6 py-3 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-lg hover:shadow-xl hover:scale-105 transition-all font-medium"
+                  >
+                    Rimuovi filtri
+                  </button>
+                </div>
               </div>
             )}
           </div>
