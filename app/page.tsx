@@ -6,6 +6,7 @@ import { MapPin, Search, Heart, Star, Filter, X, PanelLeftClose, PanelLeft } fro
 import type { Professional } from '@/lib/professionals'
 import type { Service } from '@/lib/services'
 import ServicesPopup from '@/components/ServicesPopup'
+import ReliabilityBadge from '@/components/ReliabilityBadge'
 
 // Dynamically import map to avoid SSR issues
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
@@ -301,9 +302,20 @@ export default function Home() {
                   <div className="flex-1 p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {professional.name}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {professional.name}
+                          </h3>
+                          {professional.status && (
+                            <ReliabilityBadge
+                              status={professional.status}
+                              reliability_score={professional.reliability_score}
+                              completion_rate={professional.completion_rate}
+                              total_bookings={professional.total_bookings}
+                              size="sm"
+                            />
+                          )}
+                        </div>
                         <p className="text-sm text-teal-600 font-medium mb-2">
                           {professional.category}
                         </p>
@@ -338,6 +350,12 @@ export default function Home() {
                             ({professional.review_count})
                           </span>
                         </div>
+                        {professional.total_bookings !== undefined && professional.total_bookings > 0 && (
+                          <div className="text-xs text-gray-500 text-right">
+                            <div>{professional.completion_rate?.toFixed(0)}% completato</div>
+                            <div>{professional.total_bookings} prenotazioni</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
